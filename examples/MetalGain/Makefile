@@ -7,8 +7,8 @@ BINARY    := $(BUNDLE)/Contents/MacOS/$(PLUGIN).ofx
 PLIST     := $(BUNDLE)/Contents/Info.plist
 SIGNED    := $(BUILD_DIR)/.signed
 
-# Override to install elsewhere, e.g. make install OFX_PLUGIN_PATH=~/Library/OFX/Plugins
-OFX_PLUGIN_PATH ?= /Library/OFX/Plugins
+# Override to install elsewhere, e.g. make install OFX_PLUGIN_PATH=/Library/OFX/Plugins
+OFX_PLUGIN_PATH ?= $(HOME)/Library/OFX/Plugins
 
 # Livegrade is Apple silicon only; override for a universal build, e.g. ARCHS="arm64 x86_64"
 ARCHS      ?= arm64

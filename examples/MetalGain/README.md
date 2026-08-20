@@ -62,30 +62,23 @@ The generated project builds the same bundle as the Makefile and is not committe
 Products are written to `build/xcode/<configuration>/` rather than to Xcode's derived data directory, and `make clean` removes them together with the Makefile's output. The build does not install the bundle. To install a build from Xcode, copy it to a plugin directory:
 
 ```sh
-cp -R build/xcode/Release/MetalGainExample.ofx.bundle ~/Library/OFX/Plugins/
+cp -R build/xcode/Debug/MetalGainExample.ofx.bundle ~/Library/OFX/Plugins/
 ```
 
 An `.ofx` bundle cannot be launched directly. For debugging, set the scheme's run executable to the host application and attach to it.
 
 ### Installation
 
-`make install` copies the bundle to the directory specified by `OFX_PLUGIN_PATH`, which defaults to `/Library/OFX/Plugins`:
+`make install` copies the bundle to the directory specified by `OFX_PLUGIN_PATH`, which defaults to the user plugin directory `~/Library/OFX/Plugins`. It is writable without elevated privileges:
 
 ```sh
 make install
 ```
 
-> [!NOTE]
-> `/Library/OFX/Plugins` is not writable by regular users. If `make install` fails with a permission error, repeat the command with `sudo`:
->
-> ```sh
-> sudo make install
-> ```
-
-For a per-user installation, set `OFX_PLUGIN_PATH` to the user plugin directory. It is writable without elevated privileges:
+For a system-wide installation, set `OFX_PLUGIN_PATH` to the system plugin directory. It is not writable by regular users, so the command needs `sudo`:
 
 ```sh
-make install OFX_PLUGIN_PATH=~/Library/OFX/Plugins
+sudo make install OFX_PLUGIN_PATH=/Library/OFX/Plugins
 ```
 
 Livegrade scans the user directory first. A plugin installed there shadows a plugin with the same identifier in the system directory.
