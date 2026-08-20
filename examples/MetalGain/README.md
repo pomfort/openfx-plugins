@@ -118,7 +118,7 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 
 * **Image processing in a Metal kernel.** `src/MetalKernel.mm` contains the complete pattern: kernel source, pipeline setup, and the dispatch onto the command queue the host provides.
 * **Precompiled Metal libraries.** This example compiles its kernel source at load time. A plugin can also ship a prebuilt `.metallib` in its bundle and call into it.
-* **No CPU-based image processing.** Per-pixel loops and fallback paths that read a texture back into host memory are not suitable. Pixel operations on the CPU compete with the live signal path.
+* **No CPU-based image processing.** Per-pixel loops and fallback paths that read a texture back into host memory are not suitable. Pixel operations on the CPU compete with the live signal path. A plugin that keeps a CPU path for other hosts should not let Livegrade select it. See [The Metal texture extension](#the-metal-texture-extension) on dispatching per render path.
 * **Descriptive tasks in C++.** `src/MetalGainExample.cpp` describes the plugin, its parameters and their user interface, and reads parameter values per render. The OpenFX support library additionally offers a CPU render path through `multiThreadProcessImages()`; this example leaves it unimplemented and overrides `processImagesMetalTextures()` instead. Code that touches pixels belongs in `src/MetalKernel.mm` in all cases.
 
 
@@ -132,6 +132,9 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 ```
 
 These properties are not part of the OpenFX standard. They are an extension proposed by Video Village and adopted by hosts and plugins ahead of standardization. The header is located in `third_party/extensions`, outside `third_party/openfx`, which contains an unmodified copy of the OpenFX project.
+
+> [!NOTE]
+> This example targets Livegrade only and implements the texture path alone. A plugin for several hosts typically adds it as one more variant next to the `MTLBuffer`, CPU, CUDA or OpenCL paths and dispatches on the `isEnabled…` render arguments; hosts that do not know the extension simply ignore it.
 
 The bundled OpenFX C++ support library is extended accordingly. It adds `setSupportsMetalTexture()`, the `isEnabledMetalTexture` render argument, and the `processImagesMetalTextures()` hook this example implements. None of these exist upstream.
 

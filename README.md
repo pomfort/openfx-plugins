@@ -25,8 +25,6 @@ This is the technical documentation for **plugin developers**: what Livegrade's 
 
 Everything else about the host is announced through the OpenFX API and can be read at runtime: contexts, components, pixel depths, the suites it provides, the actions it issues and their arguments.
 
-A complete, buildable plugin covering Metal textures, the Filter context and the spatial-free variant is in [`examples/MetalGain`](examples/MetalGain).
-
 ### The live use case
 
 OpenFX plugins are usually written for applications that render a timeline: frames are produced ahead of time, cached, and re-rendered when something changes. Livegrade instead applies looks to **live video signals**: the picture coming out of the camera while it is being shot on a film set, or while a live production is on air. A plugin in the node chain renders every incoming frame at signal frame rate, for the viewer and for the SDI outputs. There is no pre-render and no cache. A plugin that does not keep up causes dropped frames in the live signal rather than a longer export.
@@ -60,6 +58,16 @@ Plugins are ordinary OpenFX bundles (`<name>.ofx.bundle`), discovered in `~/Libr
 
 A look stores which plugin was used and the parameter values, not the plugin itself. Where the plugin is missing, the node passes the image through unchanged and keeps the stored values, so the look survives the round trip and works again once the plugin is installed.
 
+## Example plugin and recommendations for writing plugins
+
+[`examples/MetalGain`](examples/MetalGain) contains a complete, buildable plugin covering Metal textures, the Filter context and the spatial-free variant. It is an example implementation of the requirements described below, and the fastest way to see a working plugin in Livegrade.
+
+Its [README](examples/MetalGain/README) also documents how a plugin should be written for a host that renders a live signal:
+
+* [Recommendations for writing custom plugins](examples/MetalGain/README.md#recommendations-for-writing-custom-plugins): where image processing belongs, why CPU pixel paths are unsuitable, and how descriptive code and kernel code are separated
+* [The Metal texture extension](examples/MetalGain/README.md#the-metal-texture-extension): the extension header and the support library additions a plugin needs for Metal texture handover
+* [Build and installation](examples/MetalGain/README.md#build-and-installation): Makefile and Xcode project setup, and how to verify the coordinate convention and the spatial-free render in Livegrade
+
 ## Requirements for plugins
 
 ### Metal textures and coordinates (required)
@@ -81,6 +89,8 @@ gPropertySuite->propSetString(effectProps,
 ```
 
 A plugin that does not declare it **cannot be used**: the node reports that the plugin does not support Metal texture handover and fails to load without images being processed. On its own descriptor the host declares both Metal properties as `"true"` and the OpenGL, OpenCL and CUDA ones as `"false"`, which allows a plugin to verify the render path before declaring its own capabilities.
+
+For a plugin that also runs in other hosts, Metal texture handover is normally an **additional** render path rather than a replacement. Hosts that do not know the extension ignore the property and keep handing over images the way they already do (as `MTLBuffer`, or through the CPU, CUDA or OpenCL paths) and the plugin selects its path per render from the `…Enabled` properties in the render in-args. Declaring `kOfxImageEffectPropMetalTextureSupported` therefore adds Livegrade support without affecting where the plugin already works.
 
 In the render actions the host sets `kOfxImageEffectPropMetalTextureEnabled` to `1` and `kOfxImageEffectPropMetalEnabled` to `0`. `kOfxImagePropData` of both the source and the output image is then an `id<MTLTexture>` (bottom-left origin, see below), and `kOfxImageEffectPropMetalCommandQueue` in the render in-args is the `id<MTLCommandQueue>` to encode onto. The plugin owns neither texture: it must not release them, and it must not assume the same textures are used for the next render.
 
