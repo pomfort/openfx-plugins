@@ -1,0 +1,59 @@
+name: MetalGainExample
+
+options:
+  createIntermediateGroups: true
+  minimumXcodeGenVersion: "2.40"
+
+targets:
+  MetalGainExample:
+    type: bundle
+    platform: macOS
+    deploymentTarget: "15.0"
+
+    sources:
+      - src
+      - third_party/openfx/Support/src
+
+    settings:
+      base:
+        ARCHS: arm64
+        ONLY_ACTIVE_ARCH: NO
+        CLANG_CXX_LANGUAGE_STANDARD: "c++20"
+        GCC_SYMBOLS_PRIVATE_EXTERN: YES
+
+        # The Makefile builds without ARC, and the Metal code manages its objects
+        # manually. Xcode would otherwise default to ARC and reject those calls.
+        CLANG_ENABLE_OBJC_ARC: NO
+
+        # The bundled OpenFX support library has doc-comment issues Xcode warns about.
+        CLANG_WARN_DOCUMENTATION_COMMENTS: NO
+
+        # An OpenFX plugin is a bundle named <name>.ofx.bundle whose executable
+        # is <name>.ofx. Without these two settings Xcode produces <name>.bundle.
+        WRAPPER_EXTENSION: ofx.bundle
+        EXECUTABLE_NAME: $(PRODUCT_NAME).ofx
+
+        INFOPLIST_FILE: Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        PRODUCT_BUNDLE_IDENTIFIER: com.pomfort.MetalGainExample
+
+        # Build next to the Makefile's output instead of into DerivedData, so the
+        # bundle is where the developer expects it: build/xcode/<configuration>/
+        SYMROOT: $(PROJECT_DIR)/build/xcode
+        OBJROOT: $(PROJECT_DIR)/build/xcode/intermediates
+
+        HEADER_SEARCH_PATHS:
+          - third_party/openfx/include
+          - third_party/openfx/Support/include
+          - third_party/extensions/include
+
+      configs:
+        Debug:
+          GCC_OPTIMIZATION_LEVEL: 0
+        Release:
+          GCC_OPTIMIZATION_LEVEL: 2
+
+    dependencies:
+      - sdk: Metal.framework
+      - sdk: Foundation.framework
+      - sdk: AppKit.framework

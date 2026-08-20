@@ -78,10 +78,7 @@ void RunMetalKernel(void* p_CmdQ,
 
     id<MTLCommandQueue>            queue = static_cast<id<MTLCommandQueue> >(p_CmdQ);
     id<MTLDevice>                  device = queue.device;
-    id<MTLLibrary>                 metalLibrary;     // Metal library
-    id<MTLFunction>                kernelFunction;   // Compute kernel
     id<MTLComputePipelineState>    pipelineState;    // Metal pipeline
-    NSError* err;
 
     std::unique_lock<std::mutex> lock(s_PipelineQueueMutex);
 
@@ -134,7 +131,7 @@ void RunMetalKernel(void* p_CmdQ,
     id<MTLComputeCommandEncoder> computeEncoder = [commandBuffer computeCommandEncoder];
     [computeEncoder setComputePipelineState:pipelineState];
 
-    int exeWidth = [pipelineState threadExecutionWidth];
+    const NSUInteger exeWidth = pipelineState.threadExecutionWidth;
     MTLSize threadGroupCount = MTLSizeMake(exeWidth, 1, 1);
     MTLSize threadGroups     = MTLSizeMake((p_Width + exeWidth - 1)/exeWidth, p_Height, 1);
 

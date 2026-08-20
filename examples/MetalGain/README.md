@@ -47,6 +47,26 @@ make ARCHS="arm64 x86_64"
 
 `make clean` removes `build/` and all generated files.
 
+### Xcode project
+
+The repository contains no Xcode project. [XcodeGen](https://github.com/yonaskolb/XcodeGen) generates one from `project.yml`:
+
+```sh
+brew install xcodegen
+xcodegen generate
+open MetalGainExample.xcodeproj
+```
+
+The generated project builds the same bundle as the Makefile and is not committed. Regenerate it after adding or removing source files, and keep `project.yml` and the `Makefile` in sync.
+
+Products are written to `build/xcode/<configuration>/` rather than to Xcode's derived data directory, and `make clean` removes them together with the Makefile's output. The build does not install the bundle. To install a build from Xcode, copy it to a plugin directory:
+
+```sh
+cp -R build/xcode/Release/MetalGainExample.ofx.bundle ~/Library/OFX/Plugins/
+```
+
+An `.ofx` bundle cannot be launched directly. For debugging, set the scheme's run executable to the host application and attach to it.
+
 ### Installation
 
 `make install` copies the bundle to the directory specified by `OFX_PLUGIN_PATH`, which defaults to `/Library/OFX/Plugins`:
@@ -96,6 +116,7 @@ Setting the node to **Non-Spatial Effects Only** in Livegrade removes the vignet
 | `third_party/openfx/Support` | OpenFX C++ support library, compiled into the plugin, extended as described under [The Metal texture extension](#the-metal-texture-extension) |
 | `third_party/extensions/include` | `ofxMetalTexture.h`, not part of OpenFX, see [The Metal texture extension](#the-metal-texture-extension) |
 | `Makefile` | Build rules. `OFX_PLUGIN_PATH` and `ARCHS` are overridable |
+| `project.yml` | XcodeGen specification for generating an Xcode project |
 | `build/` | Generated files, created by `make`, not committed |
 
 ## Recommendations for writing custom plugins
