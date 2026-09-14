@@ -159,6 +159,47 @@ Renders without a frame context, such as stills, thumbnails and LUT creation, us
 
 The OpenFX node is currently **not** color-managed: the host declares `kOfxImageEffectColourManagementNone` and passes the image on exactly as the previous node produced it, without applying Livegrade's context colorspace. The input encoding therefore depends on where the user places the node in the chain. A plugin that expects a specific encoding should expose a source transfer function or colorspace parameter, as most film emulation plugins do. The user can then match it to the node's position.
 
+## Debugging plugins
+
+Livegrade writes a log file for every session to `~/Library/Logs/Livegrade Frontier`, named `com.pomfort.Livegrade7 <date>--<time>.log`.
+
+The OFX host files its messages under the `PfnCoreOFX` subsystem. Warnings and errors are **always** written, with nothing to switch on: every action a plugin fails, and every host call a plugin makes that does not succeed, leaves a line. That is the first place to look when a plugin does not appear in the node's plugin menu, does not instantiate, or does not render.
+
+### Tracing the host–plugin conversation
+
+For a problem the warnings do not explain, the host can additionally log **every action it issues to the plugin and every suite call the plugin makes back into the host**, one line each. This is off by default and switched on with a user default:
+
+```sh
+defaults write com.pomfort.Livegrade7 PfnLogLevel "PfnCoreOFX:trace"
+defaults write com.pomfort.Livegrade7 PULogDebugLogging -bool YES
+```
+
+`PfnLogLevel` takes a comma-separated list of `<subsystem>:<level>` pairs; the levels are `trace`, `debug`, `info`, `warning`, `error` and `off`, and the default for every subsystem is `warning`. `PULogDebugLogging` additionally persists debug output for all subsystems, which is the switch to use when Pomfort asks for a detailed log. The value is read once at launch, so **Livegrade has to be restarted** after changing it — the head of the new log file states what took effect:
+
+```
+I [...] <PfnCore> [...] PfnCore logging routed into PomfortLogging (PfnCoreOFX: trace)
+```
+
+Each traced line names the handle and property it refers to and carries the returned value, or the reason the call failed (`[...]` stands in for the timestamp and the thread):
+
+```
+D [...] <PfnCoreOFX> [...] OfxPlugin.render(effect instance 1, ObjectIdentifier(0x000000090703b700), (0, 0, 1920, 1080), true, false, 219590.0)
+D [...] <PfnCoreOFX> [...] OfxPropertySuiteV1.propGetDouble(inArgs render, OfxPropTime[0]) -> 219590.0
+D [...] <PfnCoreOFX> [...] OfxPropertySuiteV1.propGetInt(inArgs render, OfxImageEffectPropMetalTextureEnabled[0]) -> 1
+W [...] <PfnCoreOFX> [...] OfxPropertySuiteV1.propGetPointer(inArgs render, OfxImageEffectPropCudaStream[0]) failed: no such property — inArgs render does not hold OfxImageEffectPropCudaStream.
+D [...] <PfnCoreOFX> [...] OfxImageEffectSuiteV1.clipGetImage(Output, t=219590.0) -> image 8213539410375725489, (0, 0, 1920, 1080)
+```
+
+Switching the trace off again leaves the regular log, including its warnings, in place:
+
+```sh
+defaults delete com.pomfort.Livegrade7 PfnLogLevel
+defaults delete com.pomfort.Livegrade7 PULogDebugLogging
+```
+
+> [!IMPORTANT]
+> A trace logs several lines per rendered frame and per instance, so a running live signal fills a log file within seconds and pushes older files out. Switch it on for one reproduction, not for a working session.
+
 ## Contact
 
 For questions about the host, or for a plugin that does not behave as expected in Livegrade, write to [contact@pomfort.com](mailto:contact@pomfort.com).
