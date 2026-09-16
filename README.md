@@ -207,6 +207,19 @@ defaults delete com.pomfort.Livegrade7 PULogDebugLogging
 > [!IMPORTANT]
 > A trace logs several lines per rendered frame and per instance, so a running live signal fills a log file within seconds and pushes older files out. Switch it on for one reproduction, not for a working session.
 
+## Changelog
+
+### 1.1
+
+* Images declare the pixel depth of the texture they hand over: `kOfxBitDepthHalf` for the half-float textures the host renders by default, `kOfxBitDepthFloat` for a float texture. A plugin sizes its kernels from `kOfxImageEffectPropPixelDepth` instead of reading the format off the `MTLTexture`, which was necessary while Livegrade Frontier declared `kOfxBitDepthFloat` for every texture up to and including 7.2.2 ([Metal textures and coordinates](#metal-textures-and-coordinates-required)).
+* The host announces no clip change. Clip-derived state has to be established in `createInstance` and kept current from `changedParam`; a plugin that relies on `changedClip` alone comes up in a state this host never corrects ([Host capabilities](#host-capabilities)).
+* Documented the log Livegrade writes for every session, and the trace that logs every action the host issues and every suite call a plugin makes ([Debugging plugins](#debugging-plugins)).
+* The [example plugin](examples/MetalGain) declares both pixel depths and implements no `changedClip`.
+
+### 1.0
+
+Initial documentation of Livegrade's OpenFX host, with the [MetalGain example plugin](examples/MetalGain).
+
 ## Contact
 
 For questions about the host, or for a plugin that does not behave as expected in Livegrade, write to [contact@pomfort.com](mailto:contact@pomfort.com).
