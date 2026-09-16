@@ -102,10 +102,7 @@ public:
     /* Override changedParam */
     virtual void changedParam(const OFX::InstanceChangedArgs& p_Args, const std::string& p_ParamName);
 
-    /* Override changed clip */
-    virtual void changedClip(const OFX::InstanceChangedArgs& p_Args, const std::string& p_ClipName);
-
-    /* Set the enabledness of the component scale params depending on the type of input image and the state of the scaleComponents param */
+    /* Set the enabledness of the component scale params depending on the state of the scaleComponents param */
     void setEnabledness();
 
     /* Set up and run a processor */
@@ -169,18 +166,13 @@ void MetalGainExampleEffect::changedParam(const OFX::InstanceChangedArgs& p_Args
     }
 }
 
-void MetalGainExampleEffect::changedClip(const OFX::InstanceChangedArgs& p_Args, const std::string& p_ClipName)
-{
-    if (p_ClipName == kOfxImageEffectSimpleSourceClipName)
-    {
-        setEnabledness();
-    }
-}
-
 void MetalGainExampleEffect::setEnabledness()
 {
-    // the component enabledness depends on the clip being RGBA and the param being true
-    const bool enable = (m_ComponentScalesEnabled->getValue() && (m_SrcClip->getPixelComponents() == OFX::ePixelComponentRGBA));
+    // The enabledness depends on the param alone. Livegrade's clips are RGBA for the life of
+    // the instance and it announces no clip change, so there is nothing else to react to and
+    // nowhere else to react from: the constructor establishes this state and changedParam keeps
+    // it current. A host that does vary its clips would need that third trigger back.
+    const bool enable = m_ComponentScalesEnabled->getValue();
 
     m_ScaleR->setEnabled(enable);
     m_ScaleG->setEnabled(enable);

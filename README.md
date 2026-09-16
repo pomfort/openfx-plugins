@@ -51,6 +51,13 @@ Not supported:
 * Components other than RGBA, multiple clip depths or pixel aspect ratios
 * Parameter animation and keyframes, custom interacts and overlays, parametric parameters, parameter pages
 * Tiled rendering and temporal clip access: a plugin only ever sees the frame it is asked to render
+* Clip changes: the host issues no `kOfxActionInstanceChanged` with `kOfxTypeClip`. A plugin's
+  clip is RGBA for the instance's whole life, so there is nothing to announce — but note that
+  the OpenFX SDK samples most plugins start from set clip-derived state in `changedClip` as well
+  as in the constructor — `setEnabledness()` in Resolve's Gain sample. Establish such state in
+  `createInstance` and keep it current from `changedParam`; a plugin that relies on `changedClip`
+  alone comes up in a state this host will never correct. The example here implements no
+  `changedClip` for that reason.
 
 ### Installation and discovery
 
