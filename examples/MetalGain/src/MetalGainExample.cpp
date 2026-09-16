@@ -143,7 +143,10 @@ MetalGainExampleEffect::MetalGainExampleEffect(OfxImageEffectHandle p_Handle)
 
 void MetalGainExampleEffect::render(const OFX::RenderArguments& p_Args)
 {
-    if ((m_DstClip->getPixelDepth() == OFX::eBitDepthFloat) && (m_DstClip->getPixelComponents() == OFX::ePixelComponentRGBA))
+    const OFX::BitDepthEnum dstBitDepth = m_DstClip->getPixelDepth();
+
+    if (((dstBitDepth == OFX::eBitDepthHalf) || (dstBitDepth == OFX::eBitDepthFloat)) &&
+        (m_DstClip->getPixelComponents() == OFX::ePixelComponentRGBA))
     {
         GainProcessor imageScaler(*this);
         setupAndProcess(imageScaler, p_Args);
@@ -255,7 +258,9 @@ void MetalGainExampleFactory::describe(OFX::ImageEffectDescriptor& p_Desc)
     // Add the supported contexts, only filter at the moment
     p_Desc.addSupportedContext(eContextFilter);
 
-    // Add supported pixel depths
+    // Add supported pixel depths. The host declares the depth of the texture it hands over:
+    // half float for an MTLPixelFormatRGBA16Float texture, float for MTLPixelFormatRGBA32Float.
+    p_Desc.addSupportedBitDepth(eBitDepthHalf);
     p_Desc.addSupportedBitDepth(eBitDepthFloat);
 
     // Set a few flags
