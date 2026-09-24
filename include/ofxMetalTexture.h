@@ -108,10 +108,18 @@ the current action
      ::kOfxImagePropBounds, ::kOfxImagePropRegionOfDefinition, the regions
      of interest and the render window. A plug-in works in OpenFX
      coordinates throughout and does not need to flip.
-   - ::kOfxImageEffectPropPixelDepth and ::kOfxImageEffectPropComponents
-     describe the OpenFX image; the texture MAY use a different
-     MTLPixelFormat. The plug-in SHOULD read the pixel format, dimensions
-     and usage from the MTLTexture itself.
+   - The MTLPixelFormat of a texture corresponds to
+     ::kOfxImageEffectPropPixelDepth and ::kOfxImageEffectPropComponents of
+     the image, as the memory layout does for CPU memory and Metal buffers:
+     for RGBA images ::kOfxBitDepthByte is MTLPixelFormatRGBA8Unorm,
+     ::kOfxBitDepthShort is MTLPixelFormatRGBA16Unorm, ::kOfxBitDepthHalf
+     is MTLPixelFormatRGBA16Float and ::kOfxBitDepthFloat is
+     MTLPixelFormatRGBA32Float; alpha-only images use the single-channel
+     R formats. Metal has no three-channel texture formats, so a host MUST
+     NOT pass ::kOfxImageComponentRGB images as textures. A host MUST NOT
+     pass a texture whose format does not match the depth and components
+     it reports. The plug-in MAY additionally read the format, dimensions
+     and usage from the MTLTexture.
    - ::kOfxImagePropRowBytes has no meaning for a texture and is 0.
    - Source textures MUST be readable from shaders; the output texture
      MUST be writable from shaders.

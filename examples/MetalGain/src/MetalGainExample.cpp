@@ -143,7 +143,9 @@ MetalGainExampleEffect::MetalGainExampleEffect(OfxImageEffectHandle p_Handle)
 
 void MetalGainExampleEffect::render(const OFX::RenderArguments& p_Args)
 {
-    if ((m_DstClip->getPixelDepth() == OFX::eBitDepthFloat) && (m_DstClip->getPixelComponents() == OFX::ePixelComponentRGBA))
+    // Half and float textures are both read and written as float by the kernel
+    const OFX::BitDepthEnum depth = m_DstClip->getPixelDepth();
+    if (((depth == OFX::eBitDepthHalf) || (depth == OFX::eBitDepthFloat)) && (m_DstClip->getPixelComponents() == OFX::ePixelComponentRGBA))
     {
         GainProcessor imageScaler(*this);
         setupAndProcess(imageScaler, p_Args);
@@ -255,7 +257,9 @@ void MetalGainExampleFactory::describe(OFX::ImageEffectDescriptor& p_Desc)
     // Add the supported contexts, only filter at the moment
     p_Desc.addSupportedContext(eContextFilter);
 
-    // Add supported pixel depths
+    // Add supported pixel depths. Livegrade passes half-float textures by default;
+    // the kernel reads and writes both formats through texture2d<float>.
+    p_Desc.addSupportedBitDepth(eBitDepthHalf);
     p_Desc.addSupportedBitDepth(eBitDepthFloat);
 
     // Set a few flags

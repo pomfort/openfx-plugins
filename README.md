@@ -96,8 +96,10 @@ In the render actions the host sets `kOfxImageEffectPropMetalTextureEnabled` to 
 
 While Metal places a texture's origin at the top left, OpenFX places an image's origin at the bottom left, with y increasing upwards. The textures Livegrade passes follow the **OpenFX convention**: their origin is the bottom left, consistent with `kOfxImagePropBounds`, `kOfxImagePropRegionOfDefinition`, the regions of interest and the render window. A plugin therefore works in OpenFX coordinates throughout and never has to flip anything.
 
+The texture's pixel format corresponds to `kOfxImageEffectPropPixelDepth` and `kOfxImageEffectPropComponents` of the image, as the memory layout does for CPU memory and Metal buffers: `kOfxBitDepthHalf` with RGBA is `MTLPixelFormatRGBA16Float`, `kOfxBitDepthFloat` with RGBA is `MTLPixelFormatRGBA32Float`. Livegrade renders with half-float RGBA by default, so a plugin should declare `kOfxBitDepthHalf` among its supported depths (in addition to `kOfxBitDepthFloat`). `kOfxImagePropRowBytes` has no meaning for a texture and is reported as `0`.
+
 > [!NOTE]
-> `kOfxImageEffectPropPixelDepth` describes the OpenFX image, not the texture. The texture may use a different format, currently half-float RGBA. **Read the pixel format from the `MTLTexture` itself** rather than relying on the declared depth. `kOfxImagePropRowBytes` has no meaning for a texture and is reported as `0`.
+> Livegrade Frontier versions before 7.2.2.3 reported `kOfxBitDepthFloat` regardless of the texture format. Since 7.2.2.3 the reported depth matches the texture.
 
 ### Filter context and RGBA (required)
 
