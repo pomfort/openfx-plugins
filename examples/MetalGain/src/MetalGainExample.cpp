@@ -29,7 +29,7 @@ class GainProcessor : public OFX::ImageProcessor
 public:
     explicit GainProcessor(OFX::ImageEffect& p_Instance);
 
-    virtual void processImagesMetalTextures(bool hasNoSpatialAwareness);
+    virtual void processImagesMetalTexture(void);
 
     void setSrcImg(OFX::Image* p_SrcImg);
     void setScales(float p_ScaleR, float p_ScaleG, float p_ScaleB, float p_ScaleA);
@@ -56,7 +56,7 @@ extern void RunMetalKernel(void* p_CmdQ,
                            const bool hasNoSpatialAwareness);
 #endif
 
-void GainProcessor::processImagesMetalTextures(bool hasNoSpatialAwareness)
+void GainProcessor::processImagesMetalTexture(void)
 {
 #ifdef __APPLE__
     const OfxRectI& bounds = _srcImg->getBounds();
@@ -72,7 +72,7 @@ void GainProcessor::processImagesMetalTextures(bool hasNoSpatialAwareness)
                    _scales,
                    input,
                    output,
-                   hasNoSpatialAwareness);
+                   _hasNoSpatialAwareness);
 #endif
 }
 

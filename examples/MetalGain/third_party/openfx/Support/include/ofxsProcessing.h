@@ -34,7 +34,7 @@ namespace OFX {
         bool             _isEnabledCudaRender;   /**< @brief is Cuda Render Enabled */
         bool             _isEnabledMetalRender;  /**< @brief is Metal Render Enabled */
         bool             _isEnabledMetalTexture; /**< @brief is Metal Texture Enabled */
-        bool             _hasNoSpatialAwareness; /**< @brief has no Spatial Awareness */
+        bool             _hasNoSpatialAwareness; /**< @brief has no Spatial Awareness (Pomfort extension, read it in processImages*() overrides) */
         void*            _pOpenCLCmdQ;           /**< @brief OpenCL Command Queue Handle */
         void*            _pCudaStream;           /**< @brief Cuda Stream Handle */
         void*            _pMetalCmdQ;            /**< @brief Metal Command Queue Handle */
@@ -58,6 +58,9 @@ namespace OFX {
 
         /** @brief set the destination image */
         void setDstImg(OFX::Image *v) {_dstImg = v; }
+
+        /** @brief was the render requested without spatial awareness (kOfxImageEffectPropNoSpatialAwareness) */
+        bool hasNoSpatialAwareness(void) const { return _hasNoSpatialAwareness; }
 
         /** @brief set OpenCL, CUDA render arguments */
         void setGPURenderArgs(const OFX::RenderArguments& args)
@@ -109,42 +112,43 @@ namespace OFX {
             win.y1 = y1; win.y2 = y2;
 
             // and render that thread on each
-            multiThreadProcessImages(win, _hasNoSpatialAwareness);
+            multiThreadProcessImages(win);
         }
 
         /** @brief called before any MP is done */
         virtual void preProcess(void) {}
 
         /** @brief this is called by process to actually process images using OpenCL when isEnabledOpenCLRender is true, override in derived classes */
-        virtual void processImagesOpenCL(bool hasNoSpatialAwareness)
+        virtual void processImagesOpenCL(void)
         {
             OFX::Log::print("processImagesOpenCL not implemented");
             OFX::throwSuiteStatusException(kOfxStatErrUnsupported);
         };
 
         /** @brief this is called by process to actually process images using CUDA when isEnabledCudaRender is true, override in derived classes */
-        virtual void processImagesCuda(bool hasNoSpatialAwareness)
+        virtual void processImagesCuda(void)
         {
             OFX::Log::print("processImagesCuda not implemented");
             OFX::throwSuiteStatusException(kOfxStatErrUnsupported);
         };
 
         /** @brief this is called by process to actually process images using Metal when isEnabledMetalRender is true, override in derived classes */
-        virtual void processImagesMetalBuffers(bool hasNoSpatialAwareness)
+        virtual void processImagesMetal(void)
         {
-            OFX::Log::print("processImagesMetalBuffers not implemented");
+            OFX::Log::print("processImagesMetal not implemented");
             OFX::throwSuiteStatusException(kOfxStatErrUnsupported);
         };
 
-        /** @brief this is called by process to actually process images using Metal when isEnabledMetalTexture is true, override in derived classes */
-        virtual void processImagesMetalTextures(bool hasNoSpatialAwareness)
+        /** @brief this is called by process to actually process images using Metal textures when isEnabledMetalTexture is true
+            (the image data pointers are id<MTLTexture>), override in derived classes */
+        virtual void processImagesMetalTexture(void)
         {
             OFX::Log::print("processImagesMetalTexture not implemented");
             OFX::throwSuiteStatusException(kOfxStatErrUnsupported);
         };
 
         /** @brief this is called by multiThreadFunction to actually process images, override in derived classes */
-        virtual void multiThreadProcessImages(OfxRectI window, bool hasNoSpatialAwareness)
+        virtual void multiThreadProcessImages(OfxRectI window)
         {
             OFX::Log::print("multiThreadProcessImages not implemented");
             OFX::throwSuiteStatusException(kOfxStatErrUnsupported);
@@ -177,22 +181,22 @@ namespace OFX {
             if (_isEnabledOpenCLRender)
             {
               OFX::Log::print("processing via OpenCL");
-                processImagesOpenCL(_hasNoSpatialAwareness);
+                processImagesOpenCL();
             }
             else if (_isEnabledCudaRender)
             {
               OFX::Log::print("processing via CUDA");
-                processImagesCuda(_hasNoSpatialAwareness);
+                processImagesCuda();
             }
-            else if (_isEnabledMetalRender && !_isEnabledMetalTexture)
+            else if (_isEnabledMetalTexture)
             {
-              OFX::Log::print("processing via Metal Buffers");
-                processImagesMetalBuffers(_hasNoSpatialAwareness);
+              OFX::Log::print("processing via Metal textures");
+                processImagesMetalTexture();
             }
-            else if (!_isEnabledMetalRender && _isEnabledMetalTexture)
+            else if (_isEnabledMetalRender)
             {
-              OFX::Log::print("processing via Metal Textures");
-                processImagesMetalTextures(_hasNoSpatialAwareness);
+              OFX::Log::print("processing via Metal");
+                processImagesMetal();
             }
             else // is CPU
             {

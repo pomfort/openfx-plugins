@@ -719,7 +719,7 @@ namespace OFX {
     }
   }
 
-  /** @brief Does the plugin support Metal Textures */
+  /** @brief Does the plugin support Metal texture render */
   void ImageEffectDescriptor::setSupportsMetalTexture(bool v)
   {
     try {

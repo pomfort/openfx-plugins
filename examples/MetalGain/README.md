@@ -119,7 +119,7 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 * **Image processing in a Metal kernel.** `src/MetalKernel.mm` contains the complete pattern: kernel source, pipeline setup, and the dispatch onto the command queue the host provides.
 * **Precompiled Metal libraries.** This example compiles its kernel source at load time. A plugin can also ship a prebuilt `.metallib` in its bundle and call into it.
 * **No CPU-based image processing.** Per-pixel loops and fallback paths that read a texture back into host memory are not suitable. Pixel operations on the CPU compete with the live signal path. A plugin that keeps a CPU path for other hosts should not let Livegrade select it. See [The Metal texture extension](#the-metal-texture-extension) on dispatching per render path.
-* **Descriptive tasks in C++.** `src/MetalGainExample.cpp` describes the plugin, its parameters and their user interface, and reads parameter values per render. The OpenFX support library additionally offers a CPU render path through `multiThreadProcessImages()`; this example leaves it unimplemented and overrides `processImagesMetalTextures()` instead. Code that touches pixels belongs in `src/MetalKernel.mm` in all cases.
+* **Descriptive tasks in C++.** `src/MetalGainExample.cpp` describes the plugin, its parameters and their user interface, and reads parameter values per render. The OpenFX support library additionally offers a CPU render path through `multiThreadProcessImages()`; this example leaves it unimplemented and overrides `processImagesMetalTexture()` instead. Code that touches pixels belongs in `src/MetalKernel.mm` in all cases.
 
 
 ## The Metal texture extension
@@ -131,14 +131,14 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 #define kOfxImageEffectPropMetalTextureEnabled   "OfxImageEffectPropMetalTextureEnabled"
 ```
 
-These properties are not part of the OpenFX standard. They are an extension proposed by Video Village and adopted by hosts and plugins ahead of standardization. The header is located in `third_party/extensions`, outside `third_party/openfx`, which contains an unmodified copy of the OpenFX project.
+These properties are not yet part of an OpenFX release. They are an extension proposed by Video Village, adopted by hosts and plugins ahead of standardization, and proposed for inclusion in the standard (standard change proposal #NNN in [AcademySoftwareFoundation/openfx](https://github.com/AcademySoftwareFoundation/openfx)). The header text matches that proposal, in which buffer handover (`kOfxImageEffectPropMetalRenderSupported`) and texture handover are independent capabilities. The header is located in `third_party/extensions`, outside `third_party/openfx`, which contains an unmodified copy of the OpenFX project; its defines are guarded so it also compiles next to headers that already contain the properties.
 
 > [!NOTE]
-> This example targets Livegrade only and implements the texture path alone. A plugin for several hosts typically adds it as one more variant next to the `MTLBuffer`, CPU, CUDA or OpenCL paths and dispatches on the `isEnabled…` render arguments; hosts that do not know the extension simply ignore it.
+> This example targets Livegrade only and implements the texture path alone, which it declares with `setSupportsMetalRender(false)` and `setSupportsMetalTexture(true)`. A plugin for several hosts typically adds the texture path as one more variant next to the `MTLBuffer`, CPU, CUDA or OpenCL paths, declares each of them, and dispatches on the `isEnabled…` render arguments; hosts that do not know the extension simply ignore it.
 
-The bundled OpenFX C++ support library is extended accordingly. It adds `setSupportsMetalTexture()`, the `isEnabledMetalTexture` render argument, and the `processImagesMetalTextures()` hook this example implements. None of these exist upstream.
+The bundled OpenFX C++ support library is extended accordingly. It adds `setSupportsMetalTexture()`, the `isEnabledMetalTexture` render argument, and the `processImagesMetalTexture()` hook this example implements. The names and signatures follow the support library changes in the upstream proposal, so a plugin can move to the upstream support library without changes once the proposal is merged.
 
-The support library also adds `setSupportsNoSpatialAwareness()` and the `hasNoSpatialAwareness` render argument. The underlying property is part of OpenFX 1.5.1; only the support library plumbing is added here.
+The support library also adds `setSupportsNoSpatialAwareness()` and the `hasNoSpatialAwareness` render argument. The underlying property is part of OpenFX 1.5.1; only the support library plumbing is added here. Processor subclasses read the value through `ImageProcessor::hasNoSpatialAwareness()` (or the `_hasNoSpatialAwareness` member); the `processImages…()` hooks keep their upstream signatures.
 
 A plugin built against a different copy of OpenFX requires the same extension header and the same support library additions, or direct use of the OpenFX C API.
 

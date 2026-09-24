@@ -76,23 +76,23 @@ Livegrade hands over images as Metal textures. The plugin must declare this capa
 
 ```c
 gPropertySuite->propSetString(effectProps,
-                              kOfxImageEffectPropMetalRenderSupported, 0, "true");
-gPropertySuite->propSetString(effectProps,
                               kOfxImageEffectPropMetalTextureSupported, 0, "true");
 ```
 
-`kOfxImageEffectPropMetalTextureSupported` is an OpenFX extension (proposed by Video Village) that turns the Metal render path from `MTLBuffer` handover into `MTLTexture` handover:
+`kOfxImageEffectPropMetalTextureSupported` is an OpenFX extension (proposed by Video Village) that adds `MTLTexture` handover as a capability of its own, next to the `MTLBuffer` handover of OpenFX 1.5 (`kOfxImageEffectPropMetalRenderSupported`):
 
 ```c
 #define kOfxImageEffectPropMetalTextureSupported "OfxImageEffectPropMetalTextureSupported"
 #define kOfxImageEffectPropMetalTextureEnabled   "OfxImageEffectPropMetalTextureEnabled"
 ```
 
-A plugin that does not declare it **cannot be used**: the node reports that the plugin does not support Metal texture handover and fails to load without images being processed. On its own descriptor the host declares both Metal properties as `"true"` and the OpenGL, OpenCL and CUDA ones as `"false"`, which allows a plugin to verify the render path before declaring its own capabilities.
+The two capabilities are independent. A plugin may declare buffers, textures, both or neither, and the host picks one of the declared paths per render. The properties are proposed for inclusion in the OpenFX standard (standard change proposal #NNN in [AcademySoftwareFoundation/openfx](https://github.com/AcademySoftwareFoundation/openfx)); the definitions in [`include/ofxMetalTexture.h`](include/ofxMetalTexture.h) match that proposal.
 
-For a plugin that also runs in other hosts, Metal texture handover is normally an **additional** render path rather than a replacement. Hosts that do not know the extension ignore the property and keep handing over images the way they already do (as `MTLBuffer`, or through the CPU, CUDA or OpenCL paths) and the plugin selects its path per render from the `…Enabled` properties in the render in-args. Declaring `kOfxImageEffectPropMetalTextureSupported` therefore adds Livegrade support without affecting where the plugin already works.
+A plugin that does not declare `kOfxImageEffectPropMetalTextureSupported` **cannot be used**: the node reports that the plugin does not support Metal texture handover and fails to load without images being processed. Livegrade does not require `kOfxImageEffectPropMetalRenderSupported`; a plugin that renders with textures only declares that property as `"false"`. On its own descriptor the host declares both Metal properties as `"true"` and the OpenGL, OpenCL and CUDA ones as `"false"`, which allows a plugin to verify the render path before declaring its own capabilities.
 
-In the render actions the host sets `kOfxImageEffectPropMetalTextureEnabled` to `1` and `kOfxImageEffectPropMetalEnabled` to `0`. `kOfxImagePropData` of both the source and the output image is then an `id<MTLTexture>` (bottom-left origin, see below), and `kOfxImageEffectPropMetalCommandQueue` in the render in-args is the `id<MTLCommandQueue>` to encode onto. The plugin owns neither texture: it must not release them, and it must not assume the same textures are used for the next render.
+For a plugin that also runs in other hosts, Metal texture handover is normally an **additional** render path rather than a replacement. Hosts that do not know the extension ignore the property and keep handing over images the way they already do (as `MTLBuffer`, or through the CPU, CUDA or OpenCL paths) and the plugin selects its path per render from the `…Enabled` properties in the render in-args. A plugin that declares only texture support appears to such hosts as a plugin without Metal support. Declaring `kOfxImageEffectPropMetalTextureSupported` therefore adds Livegrade support without affecting where the plugin already works.
+
+In the render actions the host sets `kOfxImageEffectPropMetalTextureEnabled` to `1` and `kOfxImageEffectPropMetalEnabled` to `0`; the two are never set together. `kOfxImagePropData` of both the source and the output image is then an `id<MTLTexture>` (bottom-left origin, see below), and `kOfxImageEffectPropMetalCommandQueue` in the render in-args is the `id<MTLCommandQueue>` to encode onto. The plugin owns neither texture: it must not release them, and it must not assume the same textures are used for the next render.
 
 While Metal places a texture's origin at the top left, OpenFX places an image's origin at the bottom left, with y increasing upwards. The textures Livegrade passes follow the **OpenFX convention**: their origin is the bottom left, consistent with `kOfxImagePropBounds`, `kOfxImagePropRegionOfDefinition`, the regions of interest and the render window. A plugin therefore works in OpenFX coordinates throughout and never has to flip anything.
 
