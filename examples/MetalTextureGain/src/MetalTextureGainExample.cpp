@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Pomfort GmbH
 // SPDX-License-Identifier: BSD-3-Clause
 
-#include "MetalGainExample.h"
+#include "MetalTextureGainExample.h"
 
 #include <stdio.h>
 
@@ -10,10 +10,10 @@
 #include "ofxsProcessing.h"
 #include "ofxsLog.h"
 
-#define kPluginName "Metal Gain Example"
+#define kPluginName "Metal Texture Gain Example"
 #define kPluginGrouping "Pomfort"
 #define kPluginDescription "RGBA gain with a spatial vignette, rendered through Metal textures. Renders the gain alone when the host asks for a spatial-free render."
-#define kPluginIdentifier "com.pomfort.MetalGainExample"
+#define kPluginIdentifier "com.pomfort.MetalTextureGainExample"
 #define kPluginSupportWebpage "https://github.com/pomfort/openfx-plugins"
 #define kPluginVersionMajor 1
 #define kPluginVersionMinor 0
@@ -91,10 +91,10 @@ void GainProcessor::setScales(float p_ScaleR, float p_ScaleG, float p_ScaleB, fl
 
 ////////////////////////////////////////////////////////////////////////////////
 /** @brief The plugin instance: parameters, identity check, render */
-class MetalGainExampleEffect : public OFX::ImageEffect
+class MetalTextureGainExampleEffect : public OFX::ImageEffect
 {
 public:
-    explicit MetalGainExampleEffect(OfxImageEffectHandle p_Handle);
+    explicit MetalTextureGainExampleEffect(OfxImageEffectHandle p_Handle);
 
     /* Override the render */
     virtual void render(const OFX::RenderArguments& p_Args);
@@ -121,7 +121,7 @@ private:
     OFX::BooleanParam* m_ComponentScalesEnabled;
 };
 
-MetalGainExampleEffect::MetalGainExampleEffect(OfxImageEffectHandle p_Handle)
+MetalTextureGainExampleEffect::MetalTextureGainExampleEffect(OfxImageEffectHandle p_Handle)
     : ImageEffect(p_Handle)
 {
     m_DstClip = fetchClip(kOfxImageEffectOutputClipName);
@@ -138,7 +138,7 @@ MetalGainExampleEffect::MetalGainExampleEffect(OfxImageEffectHandle p_Handle)
     setEnabledness();
 }
 
-void MetalGainExampleEffect::render(const OFX::RenderArguments& p_Args)
+void MetalTextureGainExampleEffect::render(const OFX::RenderArguments& p_Args)
 {
     const OFX::BitDepthEnum dstBitDepth = m_DstClip->getPixelDepth();
 
@@ -154,7 +154,7 @@ void MetalGainExampleEffect::render(const OFX::RenderArguments& p_Args)
     }
 }
 
-void MetalGainExampleEffect::changedParam(const OFX::InstanceChangedArgs& p_Args, const std::string& p_ParamName)
+void MetalTextureGainExampleEffect::changedParam(const OFX::InstanceChangedArgs& p_Args, const std::string& p_ParamName)
 {
     if (p_ParamName == "scaleComponents")
     {
@@ -166,7 +166,7 @@ void MetalGainExampleEffect::changedParam(const OFX::InstanceChangedArgs& p_Args
     }
 }
 
-void MetalGainExampleEffect::setEnabledness()
+void MetalTextureGainExampleEffect::setEnabledness()
 {
     // The enabledness depends on the param alone. Livegrade's clips are RGBA for the life of
     // the instance and it announces no clip change, so there is nothing else to react to and
@@ -180,7 +180,7 @@ void MetalGainExampleEffect::setEnabledness()
     m_ScaleA->setEnabled(enable);
 }
 
-void MetalGainExampleEffect::setupAndProcess(GainProcessor& p_GainProcessor, const OFX::RenderArguments& p_Args)
+void MetalTextureGainExampleEffect::setupAndProcess(GainProcessor& p_GainProcessor, const OFX::RenderArguments& p_Args)
 {
     // Get the dst image
     std::unique_ptr<OFX::Image> dst(m_DstClip->fetchImage(p_Args.time));
@@ -235,12 +235,12 @@ void MetalGainExampleEffect::setupAndProcess(GainProcessor& p_GainProcessor, con
 
 using namespace OFX;
 
-MetalGainExampleFactory::MetalGainExampleFactory()
-    : OFX::PluginFactoryHelper<MetalGainExampleFactory>(kPluginIdentifier, kPluginVersionMajor, kPluginVersionMinor)
+MetalTextureGainExampleFactory::MetalTextureGainExampleFactory()
+    : OFX::PluginFactoryHelper<MetalTextureGainExampleFactory>(kPluginIdentifier, kPluginVersionMajor, kPluginVersionMinor)
 {
 }
 
-void MetalGainExampleFactory::describe(OFX::ImageEffectDescriptor& p_Desc)
+void MetalTextureGainExampleFactory::describe(OFX::ImageEffectDescriptor& p_Desc)
 {
     // Basic labels
     p_Desc.setLabels(kPluginName, kPluginName, kPluginName);
@@ -303,7 +303,7 @@ static DoubleParamDescriptor* defineScaleParam(OFX::ImageEffectDescriptor& p_Des
     return param;
 }
 
-void MetalGainExampleFactory::describeInContext(OFX::ImageEffectDescriptor& p_Desc, OFX::ContextEnum /*p_Context*/)
+void MetalTextureGainExampleFactory::describeInContext(OFX::ImageEffectDescriptor& p_Desc, OFX::ContextEnum /*p_Context*/)
 {
     // Source clip only in the filter context
     // Create the mandated source clip
@@ -360,13 +360,13 @@ void MetalGainExampleFactory::describeInContext(OFX::ImageEffectDescriptor& p_De
     page->addChild(*supportParam);
 }
 
-ImageEffect* MetalGainExampleFactory::createInstance(OfxImageEffectHandle p_Handle, ContextEnum /*p_Context*/)
+ImageEffect* MetalTextureGainExampleFactory::createInstance(OfxImageEffectHandle p_Handle, ContextEnum /*p_Context*/)
 {
-    return new MetalGainExampleEffect(p_Handle);
+    return new MetalTextureGainExampleEffect(p_Handle);
 }
 
 void OFX::Plugin::getPluginIDs(PluginFactoryArray& p_FactoryArray)
 {
-    static MetalGainExampleFactory exampleFactory;
+    static MetalTextureGainExampleFactory exampleFactory;
     p_FactoryArray.push_back(&exampleFactory);
 }

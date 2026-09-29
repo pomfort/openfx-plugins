@@ -31,13 +31,13 @@ All generated files are written to `build/`; the source directories remain uncha
 ```
 build/
 ├── obj/                                # object files and header dependencies
-└── MetalGainExample.ofx.bundle/
+└── MetalTextureGainExample.ofx.bundle/
     └── Contents/
         ├── Info.plist
-        └── MacOS/MetalGainExample.ofx
+        └── MacOS/MetalTextureGainExample.ofx
 ```
 
-Rebuilds are incremental and header-aware. Editing `src/MetalGainExample.h` or an OpenFX header recompiles the dependent objects only.
+Rebuilds are incremental and header-aware. Editing `src/MetalTextureGainExample.h` or an OpenFX header recompiles the dependent objects only.
 
 The default architecture is `arm64`. Override `ARCHS` for a universal binary:
 
@@ -54,7 +54,7 @@ The repository contains no Xcode project. [XcodeGen](https://github.com/yonaskol
 ```sh
 brew install xcodegen
 xcodegen generate
-open MetalGainExample.xcodeproj
+open MetalTextureGainExample.xcodeproj
 ```
 
 The generated project builds the same bundle as the Makefile and is not committed. Regenerate it after adding or removing source files, and keep `project.yml` and the `Makefile` in sync.
@@ -62,7 +62,7 @@ The generated project builds the same bundle as the Makefile and is not committe
 Products are written to `build/xcode/<configuration>/` rather than to Xcode's derived data directory, and `make clean` removes them together with the Makefile's output. The build does not install the bundle. To install a build from Xcode, copy it to a plugin directory:
 
 ```sh
-cp -R build/xcode/Debug/MetalGainExample.ofx.bundle ~/Library/OFX/Plugins/
+cp -R build/xcode/Debug/MetalTextureGainExample.ofx.bundle ~/Library/OFX/Plugins/
 ```
 
 An `.ofx` bundle cannot be launched directly. For debugging, set the scheme's run executable to the host application and attach to it.
@@ -100,8 +100,8 @@ Setting the node to **Non-Spatial Effects Only** in Livegrade removes the vignet
 
 | Path | Contents |
 |---|---|
-| `src/MetalGainExample.cpp` | Plugin description, parameters and render action |
-| `src/MetalGainExample.h` | Plugin factory declaration |
+| `src/MetalTextureGainExample.cpp` | Plugin description, parameters and render action |
+| `src/MetalTextureGainExample.h` | Plugin factory declaration |
 | `src/MetalKernel.mm` | Metal compute kernel and pipeline setup |
 | `src/SupportWebpage.mm` | Opens a webpage in the default browser |
 | `Info.plist` | Bundle metadata, copied into the built bundle |
@@ -120,7 +120,7 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 * **Precompiled Metal libraries.** This example compiles its kernel source at load time. A plugin can also ship a prebuilt `.metallib` in its bundle and call into it.
 * **Both texture depths.** The host declares the depth of the texture it hands over: half float for an `MTLPixelFormatRGBA16Float` texture, float for `MTLPixelFormatRGBA32Float`. The example declares both depths in `kOfxActionDescribe` and accepts both in its render action. The kernel binds the textures as `texture2d<float>`, which converts either format, so it is agnostic to which one arrives.
 * **No CPU-based image processing.** Per-pixel loops and fallback paths that read a texture back into host memory are not suitable. Pixel operations on the CPU compete with the live signal path. A plugin that keeps a CPU path for other hosts should not let Livegrade select it. See [The Metal texture extension](#the-metal-texture-extension) on dispatching per render path.
-* **Descriptive tasks in C++.** `src/MetalGainExample.cpp` describes the plugin, its parameters and their user interface, and reads parameter values per render. The OpenFX support library additionally offers a CPU render path through `multiThreadProcessImages()`; this example leaves it unimplemented and overrides `processImagesMetalTexture()` instead. Code that touches pixels belongs in `src/MetalKernel.mm` in all cases.
+* **Descriptive tasks in C++.** `src/MetalTextureGainExample.cpp` describes the plugin, its parameters and their user interface, and reads parameter values per render. The OpenFX support library additionally offers a CPU render path through `multiThreadProcessImages()`; this example leaves it unimplemented and overrides `processImagesMetalTexture()` instead. Code that touches pixels belongs in `src/MetalKernel.mm` in all cases.
 
 
 ## The Metal texture extension

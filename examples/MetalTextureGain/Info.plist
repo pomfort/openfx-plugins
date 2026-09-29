@@ -5,13 +5,13 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleExecutable</key>
-	<string>MetalGainExample.ofx</string>
+	<string>MetalTextureGainExample.ofx</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.pomfort.MetalGainExample</string>
+	<string>com.pomfort.MetalTextureGainExample</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>MetalGainExample</string>
+	<string>MetalTextureGainExample</string>
 	<key>CFBundlePackageType</key>
 	<string>BNDL</string>
 	<key>CFBundleSignature</key>

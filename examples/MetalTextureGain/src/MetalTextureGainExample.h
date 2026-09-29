@@ -5,10 +5,10 @@
 
 #include "ofxsImageEffect.h"
 
-class MetalGainExampleFactory : public OFX::PluginFactoryHelper<MetalGainExampleFactory>
+class MetalTextureGainExampleFactory : public OFX::PluginFactoryHelper<MetalTextureGainExampleFactory>
 {
 public:
-    MetalGainExampleFactory();
+    MetalTextureGainExampleFactory();
     virtual void load() {}
     virtual void unload() {}
     virtual void describe(OFX::ImageEffectDescriptor& p_Desc);

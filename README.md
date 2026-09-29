@@ -67,13 +67,13 @@ A look stores which plugin was used and the parameter values, not the plugin its
 
 ## Example plugin and recommendations for writing plugins
 
-[`examples/MetalGain`](examples/MetalGain) contains a complete, buildable plugin covering Metal textures, the Filter context and the spatial-free variant. It is an example implementation of the requirements described below, and the fastest way to see a working plugin in Livegrade.
+[`examples/MetalTextureGain`](examples/MetalTextureGain) contains a complete, buildable plugin covering Metal textures, the Filter context and the spatial-free variant. It is an example implementation of the requirements described below, and the fastest way to see a working plugin in Livegrade.
 
-Its [README](examples/MetalGain/README) also documents how a plugin should be written for a host that renders a live signal:
+Its [README](examples/MetalTextureGain/README) also documents how a plugin should be written for a host that renders a live signal:
 
-* [Recommendations for writing custom plugins](examples/MetalGain/README.md#recommendations-for-writing-custom-plugins): where image processing belongs, why CPU pixel paths are unsuitable, and how descriptive code and kernel code are separated
-* [The Metal texture extension](examples/MetalGain/README.md#the-metal-texture-extension): the extension header and the support library additions a plugin needs for Metal texture handover
-* [Build and installation](examples/MetalGain/README.md#build-and-installation): Makefile and Xcode project setup, and how to verify the coordinate convention and the spatial-free render in Livegrade
+* [Recommendations for writing custom plugins](examples/MetalTextureGain/README.md#recommendations-for-writing-custom-plugins): where image processing belongs, why CPU pixel paths are unsuitable, and how descriptive code and kernel code are separated
+* [The Metal texture extension](examples/MetalTextureGain/README.md#the-metal-texture-extension): the extension header and the support library additions a plugin needs for Metal texture handover
+* [Build and installation](examples/MetalTextureGain/README.md#build-and-installation): Makefile and Xcode project setup, and how to verify the coordinate convention and the spatial-free render in Livegrade
 
 ## Requirements for plugins
 
@@ -209,16 +209,21 @@ defaults delete com.pomfort.Livegrade7 PULogDebugLogging
 
 ## Changelog
 
+### 1.2
+
+* The example plugin is renamed from MetalGain to [MetalTextureGain](examples/MetalTextureGain), including its identifier (`com.pomfort.MetalTextureGainExample`), since it demonstrates the texture handover only. Hosts see it as a new plugin; looks made with the old example do not carry over.
+* The extension is documented as in the standard change proposal to OpenFX (#NNN): `kOfxImageEffectPropMetalTextureSupported` is a capability independent of `kOfxImageEffectPropMetalRenderSupported`, and the texture's pixel format follows the declared depth and components. The bundled support library uses the hook names of that proposal (`processImagesMetalTexture()`, `processImagesMetal()`).
+
 ### 1.1
 
 * Images declare the pixel depth of the texture they hand over: `kOfxBitDepthHalf` for the half-float textures the host renders by default, `kOfxBitDepthFloat` for a float texture. A plugin sizes its kernels from `kOfxImageEffectPropPixelDepth` instead of reading the format off the `MTLTexture`, which was necessary while Livegrade Frontier declared `kOfxBitDepthFloat` for every texture up to and including 7.2.2 ([Metal textures and coordinates](#metal-textures-and-coordinates-required)).
 * The host announces no clip change. Clip-derived state has to be established in `createInstance` and kept current from `changedParam`; a plugin that relies on `changedClip` alone comes up in a state this host never corrects ([Host capabilities](#host-capabilities)).
 * Documented the log Livegrade writes for every session, and the trace that logs every action the host issues and every suite call a plugin makes ([Debugging plugins](#debugging-plugins)).
-* The [example plugin](examples/MetalGain) declares both pixel depths and implements no `changedClip`.
+* The [example plugin](examples/MetalTextureGain) declares both pixel depths and implements no `changedClip`.
 
 ### 1.0
 
-Initial documentation of Livegrade's OpenFX host, with the [MetalGain example plugin](examples/MetalGain).
+Initial documentation of Livegrade's OpenFX host, with the [MetalTextureGain example plugin](examples/MetalTextureGain).
 
 ## Contact
 

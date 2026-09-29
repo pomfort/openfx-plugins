@@ -1,11 +1,11 @@
-name: MetalGainExample
+name: MetalTextureGainExample
 
 options:
   createIntermediateGroups: true
   minimumXcodeGenVersion: "2.40"
 
 targets:
-  MetalGainExample:
+  MetalTextureGainExample:
     type: bundle
     platform: macOS
     deploymentTarget: "15.0"
@@ -35,7 +35,7 @@ targets:
 
         INFOPLIST_FILE: Info.plist
         GENERATE_INFOPLIST_FILE: NO
-        PRODUCT_BUNDLE_IDENTIFIER: com.pomfort.MetalGainExample
+        PRODUCT_BUNDLE_IDENTIFIER: com.pomfort.MetalTextureGainExample
 
         # Build next to the Makefile's output instead of into DerivedData, so the
         # bundle is where the developer expects it: build/xcode/<configuration>/

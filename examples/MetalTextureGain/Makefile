@@ -1,4 +1,4 @@
-PLUGIN    := MetalGainExample
+PLUGIN    := MetalTextureGainExample
 
 BUILD_DIR := build
 OBJ_DIR   := $(BUILD_DIR)/obj
