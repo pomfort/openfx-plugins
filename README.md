@@ -51,6 +51,13 @@ Not supported:
 * Components other than RGBA, multiple clip depths or pixel aspect ratios
 * Parameter animation and keyframes, custom interacts and overlays, parametric parameters, parameter pages
 * Tiled rendering and temporal clip access: a plugin only ever sees the frame it is asked to render
+* Clip changes: the host issues no `kOfxActionInstanceChanged` with `kOfxTypeClip`. A plugin's
+  clip is RGBA for the instance's whole life, so there is nothing to announce — but note that
+  the OpenFX SDK samples most plugins start from set clip-derived state in `changedClip` as well
+  as in the constructor — `setEnabledness()` in Resolve's Gain sample. Establish such state in
+  `createInstance` and keep it current from `changedParam`; a plugin that relies on `changedClip`
+  alone comes up in a state this host will never correct. The example here implements no
+  `changedClip` for that reason.
 
 ### Installation and discovery
 
@@ -96,10 +103,8 @@ In the render actions the host sets `kOfxImageEffectPropMetalTextureEnabled` to 
 
 While Metal places a texture's origin at the top left, OpenFX places an image's origin at the bottom left, with y increasing upwards. The textures Livegrade passes follow the **OpenFX convention**: their origin is the bottom left, consistent with `kOfxImagePropBounds`, `kOfxImagePropRegionOfDefinition`, the regions of interest and the render window. A plugin therefore works in OpenFX coordinates throughout and never has to flip anything.
 
-The texture's pixel format corresponds to `kOfxImageEffectPropPixelDepth` and `kOfxImageEffectPropComponents` of the image, as the memory layout does for CPU memory and Metal buffers: `kOfxBitDepthHalf` with RGBA is `MTLPixelFormatRGBA16Float`, `kOfxBitDepthFloat` with RGBA is `MTLPixelFormatRGBA32Float`. Livegrade renders with half-float RGBA by default, so a plugin should declare `kOfxBitDepthHalf` among its supported depths (in addition to `kOfxBitDepthFloat`). `kOfxImagePropRowBytes` has no meaning for a texture and is reported as `0`.
-
 > [!NOTE]
-> Livegrade Frontier versions before 7.2.2.3 reported `kOfxBitDepthFloat` regardless of the texture format. Since 7.2.2.3 the reported depth matches the texture.
+> `kOfxImageEffectPropPixelDepth` and `kOfxImageEffectPropComponents` describe the texture: `kOfxBitDepthHalf` with `kOfxImageComponentRGBA` for an `MTLPixelFormatRGBA16Float` texture, `kOfxBitDepthFloat` for `MTLPixelFormatRGBA32Float`. Livegrade renders half-float by default and declares the depth per image, so a plugin can size its kernels from the declared depth as it does in other hosts. Livegrade Frontier up to and including 7.2.2 declared `kOfxBitDepthFloat` for every texture; a plugin that has to run in those still has to read the format off the `MTLTexture`. `kOfxImagePropRowBytes` has no meaning for a texture and is reported as `0`.
 
 ### Filter context and RGBA (required)
 
@@ -160,6 +165,60 @@ Renders without a frame context, such as stills, thumbnails and LUT creation, us
 ## Color management
 
 The OpenFX node is currently **not** color-managed: the host declares `kOfxImageEffectColourManagementNone` and passes the image on exactly as the previous node produced it, without applying Livegrade's context colorspace. The input encoding therefore depends on where the user places the node in the chain. A plugin that expects a specific encoding should expose a source transfer function or colorspace parameter, as most film emulation plugins do. The user can then match it to the node's position.
+
+## Debugging plugins
+
+Livegrade writes a log file for every session to `~/Library/Logs/Livegrade Frontier`, named `com.pomfort.Livegrade7 <date>--<time>.log`.
+
+The OFX host files its messages under the `PfnCoreOFX` subsystem. Warnings and errors are **always** written, with nothing to switch on: every action a plugin fails, and every host call a plugin makes that does not succeed, leaves a line. That is the first place to look when a plugin does not appear in the node's plugin menu, does not instantiate, or does not render.
+
+### Tracing the host–plugin conversation
+
+For a problem the warnings do not explain, the host can additionally log **every action it issues to the plugin and every suite call the plugin makes back into the host**, one line each. This is off by default and switched on with a user default:
+
+```sh
+defaults write com.pomfort.Livegrade7 PfnLogLevel "PfnCoreOFX:trace"
+defaults write com.pomfort.Livegrade7 PULogDebugLogging -bool YES
+```
+
+`PfnLogLevel` takes a comma-separated list of `<subsystem>:<level>` pairs; the levels are `trace`, `debug`, `info`, `warning`, `error` and `off`, and the default for every subsystem is `warning`. `PULogDebugLogging` additionally persists debug output for all subsystems, which is the switch to use when Pomfort asks for a detailed log. The value is read once at launch, so **Livegrade has to be restarted** after changing it — the head of the new log file states what took effect:
+
+```
+I [...] <PfnCore> [...] PfnCore logging routed into PomfortLogging (PfnCoreOFX: trace)
+```
+
+Each traced line names the handle and property it refers to and carries the returned value, or the reason the call failed (`[...]` stands in for the timestamp and the thread):
+
+```
+D [...] <PfnCoreOFX> [...] OfxPlugin.render(effect instance 1, ObjectIdentifier(0x000000090703b700), (0, 0, 1920, 1080), true, false, 219590.0)
+D [...] <PfnCoreOFX> [...] OfxPropertySuiteV1.propGetDouble(inArgs render, OfxPropTime[0]) -> 219590.0
+D [...] <PfnCoreOFX> [...] OfxPropertySuiteV1.propGetInt(inArgs render, OfxImageEffectPropMetalTextureEnabled[0]) -> 1
+W [...] <PfnCoreOFX> [...] OfxPropertySuiteV1.propGetPointer(inArgs render, OfxImageEffectPropCudaStream[0]) failed: no such property — inArgs render does not hold OfxImageEffectPropCudaStream.
+D [...] <PfnCoreOFX> [...] OfxImageEffectSuiteV1.clipGetImage(Output, t=219590.0) -> image 8213539410375725489, (0, 0, 1920, 1080)
+```
+
+Switching the trace off again leaves the regular log, including its warnings, in place:
+
+```sh
+defaults delete com.pomfort.Livegrade7 PfnLogLevel
+defaults delete com.pomfort.Livegrade7 PULogDebugLogging
+```
+
+> [!IMPORTANT]
+> A trace logs several lines per rendered frame and per instance, so a running live signal fills a log file within seconds and pushes older files out. Switch it on for one reproduction, not for a working session.
+
+## Changelog
+
+### 1.1
+
+* Images declare the pixel depth of the texture they hand over: `kOfxBitDepthHalf` for the half-float textures the host renders by default, `kOfxBitDepthFloat` for a float texture. A plugin sizes its kernels from `kOfxImageEffectPropPixelDepth` instead of reading the format off the `MTLTexture`, which was necessary while Livegrade Frontier declared `kOfxBitDepthFloat` for every texture up to and including 7.2.2 ([Metal textures and coordinates](#metal-textures-and-coordinates-required)).
+* The host announces no clip change. Clip-derived state has to be established in `createInstance` and kept current from `changedParam`; a plugin that relies on `changedClip` alone comes up in a state this host never corrects ([Host capabilities](#host-capabilities)).
+* Documented the log Livegrade writes for every session, and the trace that logs every action the host issues and every suite call a plugin makes ([Debugging plugins](#debugging-plugins)).
+* The [example plugin](examples/MetalGain) declares both pixel depths and implements no `changedClip`.
+
+### 1.0
+
+Initial documentation of Livegrade's OpenFX host, with the [MetalGain example plugin](examples/MetalGain).
 
 ## Contact
 
