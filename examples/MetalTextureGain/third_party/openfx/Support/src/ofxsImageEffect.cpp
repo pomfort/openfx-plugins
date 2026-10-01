@@ -1897,7 +1897,6 @@ namespace OFX {
         gHostDescription.supportsCudaStream          = hostProps.propGetString(kOfxImageEffectPropCudaStreamSupported, 0, false) == "true";
         gHostDescription.supportsMetalRender         = hostProps.propGetString(kOfxImageEffectPropMetalRenderSupported, 0, false) == "true";
         gHostDescription.supportsMetalTexture        = hostProps.propGetString(kOfxImageEffectPropMetalTextureSupported, 0, false) == "true";
-        gHostDescription.supportsNoSpatialAwareness  = hostProps.propGetString(kOfxImageEffectPropNoSpatialAwareness, 0, false) == "true";
         gHostDescription.supportsRenderQualityDraft  = hostProps.propGetInt(kOfxImageEffectPropRenderQualityDraft, false) != 0; // appeared in OFX 1.4
         {
             std::string originStr = hostProps.propGetString(kOfxImageEffectHostPropNativeOrigin, false); // appeared in OFX 1.4
@@ -2233,7 +2232,6 @@ namespace OFX {
       args.isEnabledCudaRender   = inArgs.propGetInt(kOfxImageEffectPropCudaEnabled, false) != 0;
       args.isEnabledMetalRender  = inArgs.propGetInt(kOfxImageEffectPropMetalEnabled, false) != 0;
       args.isEnabledMetalTexture = inArgs.propGetInt(kOfxImageEffectPropMetalTextureEnabled, false) != 0;
-      args.hasNoSpatialAwareness = inArgs.propGetString(kOfxImageEffectPropNoSpatialAwareness, 0, false) == "true";
       args.pOpenCLCmdQ           = inArgs.propGetPointer(kOfxImageEffectPropOpenCLCommandQueue, false);
       args.pCudaStream           = inArgs.propGetPointer(kOfxImageEffectPropCudaStream, false);
       args.pMetalCmdQ            = inArgs.propGetPointer(kOfxImageEffectPropMetalCommandQueue, false);

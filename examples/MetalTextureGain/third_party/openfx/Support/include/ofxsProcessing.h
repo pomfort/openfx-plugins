@@ -34,7 +34,7 @@ namespace OFX {
         bool             _isEnabledCudaRender;   /**< @brief is Cuda Render Enabled */
         bool             _isEnabledMetalRender;  /**< @brief is Metal Render Enabled */
         bool             _isEnabledMetalTexture; /**< @brief is Metal Texture Enabled */
-        bool             _hasNoSpatialAwareness; /**< @brief has no Spatial Awareness (Pomfort extension, read it in processImages*() overrides) */
+        bool             _hasNoSpatialAwareness; /**< @brief render without spatial awareness was requested (kOfxImageEffectPropNoSpatialAwareness, OpenFX 1.5.1); read it in processImages*() overrides */
         void*            _pOpenCLCmdQ;           /**< @brief OpenCL Command Queue Handle */
         void*            _pCudaStream;           /**< @brief Cuda Stream Handle */
         void*            _pMetalCmdQ;            /**< @brief Metal Command Queue Handle */
