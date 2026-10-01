@@ -258,7 +258,6 @@ namespace OFX {
     bool supportsCudaStream;
     bool supportsMetalRender;
     bool supportsMetalTexture;
-    bool supportsNoSpatialAwareness;
 #ifdef OFX_SUPPORTS_OPENGLRENDER
     bool supportsOpenGLRender;
 #endif
@@ -834,7 +833,6 @@ namespace OFX {
     bool      isEnabledCudaRender;
     bool      isEnabledMetalRender;
     bool      isEnabledMetalTexture;
-    bool      hasNoSpatialAwareness;
     void*     pOpenCLCmdQ;
     void*     pCudaStream;
     void*     pMetalCmdQ;
