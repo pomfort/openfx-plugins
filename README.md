@@ -213,6 +213,7 @@ defaults delete com.pomfort.Livegrade7 PULogDebugLogging
 
 * The example plugin is renamed from MetalGain to [MetalTextureGain](examples/MetalTextureGain), including its identifier (`com.pomfort.MetalTextureGainExample`), since it demonstrates the texture handover only. Hosts see it as a new plugin; looks made with the old example do not carry over.
 * The extension is documented as in the standard change proposal to OpenFX (#NNN): `kOfxImageEffectPropMetalTextureSupported` is a capability independent of `kOfxImageEffectPropMetalRenderSupported`, and the texture's pixel format follows the declared depth and components. The bundled support library uses the hook names of that proposal (`processImagesMetalTexture()`, `processImagesMetal()`).
+* The example bundles the proposal's `ofxGPURender.h` and `ofxImageEffect.h`, which define the two Metal texture properties. The proposal has no `"needed"` value for `kOfxImageEffectPropMetalTextureSupported`; `ofxMetalTexture.h` follows.
 
 ### 1.1
 

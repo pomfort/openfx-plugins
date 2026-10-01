@@ -105,7 +105,7 @@ Setting the node to **Non-Spatial Effects Only** in Livegrade removes the vignet
 | `src/MetalKernel.mm` | Metal compute kernel and pipeline setup |
 | `src/SupportWebpage.mm` | Opens a webpage in the default browser |
 | `Info.plist` | Bundle metadata, copied into the built bundle |
-| `third_party/openfx/include` | OpenFX headers, version 1.5.1, unmodified |
+| `third_party/openfx/include` | OpenFX headers, version 1.5.1. `ofxGPURender.h` and `ofxImageEffect.h` are the versions from the standard change proposal (#NNN) and already define the two Metal texture properties |
 | `third_party/openfx/Support` | OpenFX C++ support library, compiled into the plugin, extended as described under [The Metal texture extension](#the-metal-texture-extension) |
 | `third_party/extensions/include` | `ofxMetalTexture.h`, not part of OpenFX, see [The Metal texture extension](#the-metal-texture-extension) |
 | `Makefile` | Build rules. `OFX_PLUGIN_PATH` and `ARCHS` are overridable |
@@ -132,7 +132,7 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 #define kOfxImageEffectPropMetalTextureEnabled   "OfxImageEffectPropMetalTextureEnabled"
 ```
 
-These properties are not yet part of an OpenFX release. They are an extension proposed by Video Village, adopted by hosts and plugins ahead of standardization, and proposed for inclusion in the standard (standard change proposal #NNN in [AcademySoftwareFoundation/openfx](https://github.com/AcademySoftwareFoundation/openfx)). The header text matches that proposal, in which buffer handover (`kOfxImageEffectPropMetalRenderSupported`) and texture handover are independent capabilities. The header is located in `third_party/extensions`, outside `third_party/openfx`, which contains an unmodified copy of the OpenFX project; its defines are guarded so it also compiles next to headers that already contain the properties.
+These properties are not yet part of an OpenFX release. They are an extension proposed by Video Village, adopted by hosts and plugins ahead of standardization, and proposed for inclusion in the standard (standard change proposal #NNN in [AcademySoftwareFoundation/openfx](https://github.com/AcademySoftwareFoundation/openfx)). The header text matches that proposal, in which buffer handover (`kOfxImageEffectPropMetalRenderSupported`) and texture handover are independent capabilities. The bundled `third_party/openfx/include/ofxGPURender.h` and `ofxImageEffect.h` are the headers of that proposal and define the properties themselves. `ofxMetalTexture.h` in `third_party/extensions` remains for plugins built against a released OpenFX; its defines are guarded, so next to the proposal's headers it adds nothing.
 
 > [!NOTE]
 > This example targets Livegrade only and implements the texture path alone, which it declares with `setSupportsMetalRender(false)` and `setSupportsMetalTexture(true)`. A plugin for several hosts typically adds the texture path as one more variant next to the `MTLBuffer`, CPU, CUDA or OpenCL paths, declares each of them, and dispatches on the `isEnabled…` render arguments; hosts that do not know the extension simply ignore it.

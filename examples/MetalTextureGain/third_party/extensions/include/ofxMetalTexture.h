@@ -42,8 +42,6 @@ extern "C" {
     - Valid Values - This must be one of
       - "false"  - the host or plug-in does not support Metal texture render
       - "true"   - the host or plug-in can support Metal texture render
-      - "needed" - the plug-in can only render with Metal textures and has
-                   no other render path (plug-in descriptor only)
 
     This property adds a second way of passing images to a Metal plug-in: as
     Metal textures (id<MTLTexture>) instead of Metal buffers (id<MTLBuffer>).
@@ -75,10 +73,10 @@ extern "C" {
 the current action
 
    If a plug-in and host have both set
-   ::kOfxImageEffectPropMetalTextureSupported="true" (or the plug-in
-   "needed") then the host MAY set this property to indicate that it is
-   passing images as Metal textures. ::kOfxImageEffectPropMetalRenderSupported
-   does not need to be set for this.
+   ::kOfxImageEffectPropMetalTextureSupported="true" then the host MAY
+   set this property to indicate that it is passing images as Metal
+   textures. ::kOfxImageEffectPropMetalRenderSupported does not need to
+   be set for this.
 
    - Type - int X 1
    - Property Set - inArgs property set of the following actions...
