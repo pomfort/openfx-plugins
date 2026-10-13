@@ -258,7 +258,6 @@ namespace OFX {
     bool supportsCudaStream;
     bool supportsMetalRender;
     bool supportsMetalTexture;
-    bool supportsNoSpatialAwareness;
 #ifdef OFX_SUPPORTS_OPENGLRENDER
     bool supportsOpenGLRender;
 #endif
@@ -453,7 +452,8 @@ namespace OFX {
     /** @brief Does the plugin support Metal Render, defaults to false */
     void setSupportsMetalRender(bool v);
 
-    /** @brief Does the plugin support Metal Textures, defaults to false */
+    /** @brief Does the plugin support Metal texture render (images passed as id<MTLTexture>), defaults to false.
+        Independent of setSupportsMetalRender(), which covers Metal buffers; a plugin may support either, both or neither. */
     void setSupportsMetalTexture(bool v);
 
     /** @brief Does the plugin support rendering with no spatial awareness, defaults to false */
@@ -833,7 +833,6 @@ namespace OFX {
     bool      isEnabledCudaRender;
     bool      isEnabledMetalRender;
     bool      isEnabledMetalTexture;
-    bool      hasNoSpatialAwareness;
     void*     pOpenCLCmdQ;
     void*     pCudaStream;
     void*     pMetalCmdQ;

@@ -31,13 +31,13 @@ All generated files are written to `build/`; the source directories remain uncha
 ```
 build/
 ├── obj/                                # object files and header dependencies
-└── MetalGainExample.ofx.bundle/
+└── MetalTextureGainExample.ofx.bundle/
     └── Contents/
         ├── Info.plist
-        └── MacOS/MetalGainExample.ofx
+        └── MacOS/MetalTextureGainExample.ofx
 ```
 
-Rebuilds are incremental and header-aware. Editing `src/MetalGainExample.h` or an OpenFX header recompiles the dependent objects only.
+Rebuilds are incremental and header-aware. Editing `src/MetalTextureGainExample.h` or an OpenFX header recompiles the dependent objects only.
 
 The default architecture is `arm64`. Override `ARCHS` for a universal binary:
 
@@ -54,7 +54,7 @@ The repository contains no Xcode project. [XcodeGen](https://github.com/yonaskol
 ```sh
 brew install xcodegen
 xcodegen generate
-open MetalGainExample.xcodeproj
+open MetalTextureGainExample.xcodeproj
 ```
 
 The generated project builds the same bundle as the Makefile and is not committed. Regenerate it after adding or removing source files, and keep `project.yml` and the `Makefile` in sync.
@@ -62,7 +62,7 @@ The generated project builds the same bundle as the Makefile and is not committe
 Products are written to `build/xcode/<configuration>/` rather than to Xcode's derived data directory, and `make clean` removes them together with the Makefile's output. The build does not install the bundle. To install a build from Xcode, copy it to a plugin directory:
 
 ```sh
-cp -R build/xcode/Debug/MetalGainExample.ofx.bundle ~/Library/OFX/Plugins/
+cp -R build/xcode/Debug/MetalTextureGainExample.ofx.bundle ~/Library/OFX/Plugins/
 ```
 
 An `.ofx` bundle cannot be launched directly. For debugging, set the scheme's run executable to the host application and attach to it.
@@ -100,12 +100,12 @@ Setting the node to **Non-Spatial Effects Only** in Livegrade removes the vignet
 
 | Path | Contents |
 |---|---|
-| `src/MetalGainExample.cpp` | Plugin description, parameters and render action |
-| `src/MetalGainExample.h` | Plugin factory declaration |
+| `src/MetalTextureGainExample.cpp` | Plugin description, parameters and render action |
+| `src/MetalTextureGainExample.h` | Plugin factory declaration |
 | `src/MetalKernel.mm` | Metal compute kernel and pipeline setup |
 | `src/SupportWebpage.mm` | Opens a webpage in the default browser |
 | `Info.plist` | Bundle metadata, copied into the built bundle |
-| `third_party/openfx/include` | OpenFX headers, version 1.5.1, unmodified |
+| `third_party/openfx/include` | OpenFX headers, version 1.5.1. `ofxGPURender.h` and `ofxImageEffect.h` are the versions from the standard change proposal (#NNN) and already define the two Metal texture properties |
 | `third_party/openfx/Support` | OpenFX C++ support library, compiled into the plugin, extended as described under [The Metal texture extension](#the-metal-texture-extension) |
 | `third_party/extensions/include` | `ofxMetalTexture.h`, not part of OpenFX, see [The Metal texture extension](#the-metal-texture-extension) |
 | `Makefile` | Build rules. `OFX_PLUGIN_PATH` and `ARCHS` are overridable |
@@ -118,8 +118,9 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 
 * **Image processing in a Metal kernel.** `src/MetalKernel.mm` contains the complete pattern: kernel source, pipeline setup, and the dispatch onto the command queue the host provides.
 * **Precompiled Metal libraries.** This example compiles its kernel source at load time. A plugin can also ship a prebuilt `.metallib` in its bundle and call into it.
+* **Both texture depths.** The host declares the depth of the texture it hands over: half float for an `MTLPixelFormatRGBA16Float` texture, float for `MTLPixelFormatRGBA32Float`. The example declares both depths in `kOfxActionDescribe` and accepts both in its render action. The kernel binds the textures as `texture2d<float>`, which converts either format, so it is agnostic to which one arrives.
 * **No CPU-based image processing.** Per-pixel loops and fallback paths that read a texture back into host memory are not suitable. Pixel operations on the CPU compete with the live signal path. A plugin that keeps a CPU path for other hosts should not let Livegrade select it. See [The Metal texture extension](#the-metal-texture-extension) on dispatching per render path.
-* **Descriptive tasks in C++.** `src/MetalGainExample.cpp` describes the plugin, its parameters and their user interface, and reads parameter values per render. The OpenFX support library additionally offers a CPU render path through `multiThreadProcessImages()`; this example leaves it unimplemented and overrides `processImagesMetalTextures()` instead. Code that touches pixels belongs in `src/MetalKernel.mm` in all cases.
+* **Descriptive tasks in C++.** `src/MetalTextureGainExample.cpp` describes the plugin, its parameters and their user interface, and reads parameter values per render. The OpenFX support library additionally offers a CPU render path through `multiThreadProcessImages()`; this example leaves it unimplemented and overrides `processImagesMetalTexture()` instead. Code that touches pixels belongs in `src/MetalKernel.mm` in all cases.
 
 
 ## The Metal texture extension
@@ -131,14 +132,14 @@ These recommendations apply to writing or adjusting OpenFX plugins for use in Po
 #define kOfxImageEffectPropMetalTextureEnabled   "OfxImageEffectPropMetalTextureEnabled"
 ```
 
-These properties are not part of the OpenFX standard. They are an extension proposed by Video Village and adopted by hosts and plugins ahead of standardization. The header is located in `third_party/extensions`, outside `third_party/openfx`, which contains an unmodified copy of the OpenFX project.
+These properties are not yet part of an OpenFX release. They are an extension proposed by Video Village, adopted by hosts and plugins ahead of standardization, and proposed for inclusion in the standard (standard change proposal #NNN in [AcademySoftwareFoundation/openfx](https://github.com/AcademySoftwareFoundation/openfx)). The header text matches that proposal, in which buffer handover (`kOfxImageEffectPropMetalRenderSupported`) and texture handover are independent capabilities. The bundled `third_party/openfx/include/ofxGPURender.h` and `ofxImageEffect.h` are the headers of that proposal and define the properties themselves. `ofxMetalTexture.h` in `third_party/extensions` remains for plugins built against a released OpenFX; its defines are guarded, so next to the proposal's headers it adds nothing.
 
 > [!NOTE]
-> This example targets Livegrade only and implements the texture path alone. A plugin for several hosts typically adds it as one more variant next to the `MTLBuffer`, CPU, CUDA or OpenCL paths and dispatches on the `isEnabled…` render arguments; hosts that do not know the extension simply ignore it.
+> This example targets Livegrade only and implements the texture path alone, which it declares with `setSupportsMetalRender(false)` and `setSupportsMetalTexture(true)`. A plugin for several hosts typically adds the texture path as one more variant next to the `MTLBuffer`, CPU, CUDA or OpenCL paths, declares each of them, and dispatches on the `isEnabled…` render arguments; hosts that do not know the extension simply ignore it.
 
-The bundled OpenFX C++ support library is extended accordingly. It adds `setSupportsMetalTexture()`, the `isEnabledMetalTexture` render argument, and the `processImagesMetalTextures()` hook this example implements. None of these exist upstream.
+The bundled OpenFX C++ support library is extended accordingly. It adds `setSupportsMetalTexture()`, the `isEnabledMetalTexture` render argument, and the `processImagesMetalTexture()` hook this example implements. The names and signatures follow the support library changes in the upstream proposal, so a plugin can move to the upstream support library without changes once the proposal is merged.
 
-The support library also adds `setSupportsNoSpatialAwareness()` and the `hasNoSpatialAwareness` render argument. The underlying property is part of OpenFX 1.5.1; only the support library plumbing is added here.
+The support library also adds `setSupportsNoSpatialAwareness()` and the `hasNoSpatialAwareness` render argument. The underlying property is part of OpenFX 1.5.1; only the support library plumbing is added here. Processor subclasses read the value through `ImageProcessor::hasNoSpatialAwareness()` (or the `_hasNoSpatialAwareness` member); the `processImages…()` hooks keep their upstream signatures.
 
 A plugin built against a different copy of OpenFX requires the same extension header and the same support library additions, or direct use of the OpenFX C API.
 
