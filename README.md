@@ -104,7 +104,12 @@ In the render actions the host sets `kOfxImageEffectPropMetalTextureEnabled` to 
 While Metal places a texture's origin at the top left, OpenFX places an image's origin at the bottom left, with y increasing upwards. The textures Livegrade passes follow the **OpenFX convention**: their origin is the bottom left, consistent with `kOfxImagePropBounds`, `kOfxImagePropRegionOfDefinition`, the regions of interest and the render window. A plugin therefore works in OpenFX coordinates throughout and never has to flip anything.
 
 > [!NOTE]
-> `kOfxImageEffectPropPixelDepth` and `kOfxImageEffectPropComponents` describe the texture: `kOfxBitDepthHalf` with `kOfxImageComponentRGBA` for an `MTLPixelFormatRGBA16Float` texture, `kOfxBitDepthFloat` for `MTLPixelFormatRGBA32Float`. Livegrade renders half-float by default and declares the depth per image, so a plugin can size its kernels from the declared depth as it does in other hosts. Livegrade Frontier up to and including 7.2.2 declared `kOfxBitDepthFloat` for every texture; a plugin that has to run in those still has to read the format off the `MTLTexture`. `kOfxImagePropRowBytes` has no meaning for a texture and is reported as `0`.
+> `kOfxImageEffectPropPixelDepth` and `kOfxImageEffectPropComponents` describe the texture: `kOfxBitDepthHalf` with `kOfxImageComponentRGBA` for an `MTLPixelFormatRGBA16Float` texture, `kOfxBitDepthFloat` for `MTLPixelFormatRGBA32Float`. Livegrade renders half-float by default and declares the depth per image, so a plugin that supports both depths can size its kernels from the declared depth as it does in other hosts. Livegrade Frontier up to and including 7.2.2 declared `kOfxBitDepthFloat` for every texture; a plugin that has to run in those still has to read the format off the `MTLTexture`. `kOfxImagePropRowBytes` has no meaning for a texture and is reported as `0`.
+
+> [!IMPORTANT]
+> The declared depth matches the texture **only if the plugin lists that depth** in `kOfxImageEffectPropSupportedPixelDepths`. For a plugin that declares `kOfxBitDepthFloat` alone, Livegrade applies a **deprecated workaround**: the plugin is still handed an `MTLPixelFormatRGBA16Float` texture, declared as `kOfxBitDepthFloat`, because the host does not convert. A plugin relying on the workaround has to read `pixelFormat` off the `MTLTexture` and treat it as authoritative.
+>
+> The workaround exists so that plugins declaring float alone keep rendering, and it may be removed: a future version of Livegrade might hand a plugin only textures of a depth it declared, which for such a plugin would mean a conversion to and from full float around every render. We recommend declaring `kOfxBitDepthHalf` and rendering into the half-float textures directly, which does not depend on the workaround and keeps a plugin at full performance either way.
 
 ### Filter context and RGBA (required)
 
@@ -208,6 +213,10 @@ defaults delete com.pomfort.Livegrade7 PULogDebugLogging
 > A trace logs several lines per rendered frame and per instance, so a running live signal fills a log file within seconds and pushes older files out. Switch it on for one reproduction, not for a working session.
 
 ## Changelog
+
+### 1.2.1
+
+* Documented the deprecated workaround by which Livegrade does not yet let the texture's pixel format follow the declared depth in every case: a plugin that declares `kOfxBitDepthFloat` alone is handed a half-float texture declared as float, since the declared depth only follows the texture for a depth the plugin listed. Such a plugin has to read the format off the `MTLTexture`. A future version of Livegrade might remove the workaround and convert instead, at a cost per render, so we recommend declaring `kOfxBitDepthHalf` to keep full performance either way ([Metal textures and coordinates](#metal-textures-and-coordinates-required)).
 
 ### 1.2
 
